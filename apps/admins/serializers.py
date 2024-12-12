@@ -41,8 +41,6 @@ class ManagerDeliverySerializer(serializers.ModelSerializer):
 
     confirm_password = serializers.CharField(write_only=True)
     password = serializers.CharField(write_only=True)
-    user_role = serializers.ChoiceField(choices=UserRole.choices)
-
 
     phone_number = serializers.CharField(validators=[UniqueValidator(
         queryset=UserModel.objects.all(),
@@ -92,13 +90,16 @@ class ManagerDeliverySerializer(serializers.ModelSerializer):
         if value not in [UserRole.MANAGER, UserRole.DELIVERY]:
             raise serializers.ValidationError("User role must be only MANAGER or DELIVERY.")
 
-
     def create(self, validated_data):
         validated_data.pop('confirm_password')
-        user = UserModel.objects.create(**validated_data)
 
+        if not validated_data.get('user_role'):
+            validated_data['user_role'] = UserRole.DELIVERY
+
+        user = UserModel.objects.create(
+            **validated_data
+        )
         user.set_password(validated_data.get('password'))
         user.save()
-
         return user
 

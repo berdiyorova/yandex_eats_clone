@@ -2,7 +2,7 @@ import re
 
 from rest_framework import serializers
 
-from apps.accounts.models import UserModel, UserRole
+from apps.accounts.models import UserModel
 from apps.client.models import ClientAddress
 
 
@@ -49,25 +49,9 @@ class LoginViaPhoneSerializer(serializers.Serializer):
         return attrs
 
 
-class VerifySerializer(serializers.Serializer):
-    code = serializers.CharField(max_length=4)
-
-
 
 class ClientAddressSerializer(serializers.ModelSerializer):
-    client = serializers.PrimaryKeyRelatedField(
-        read_only=True,
-        queryset=UserModel.objects.filter(user_role=UserRole.CLIENT)
-    )
 
     class Meta:
         model = ClientAddress
-        fields = '__all__'
-        extra_kwargs = {
-            'name': {'required': False},
-            'home_number': {'required': False},
-            'door_phone': {'required': False},
-            'entrance': {'required': False},
-            'floor': {'required': False},
-            'instructions': {'required': False},
-        }
+        exclude = ('client',)

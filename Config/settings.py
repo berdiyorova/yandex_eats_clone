@@ -191,13 +191,16 @@ SIMPLE_JWT = {
 
 
 SWAGGER_SETTINGS = {
-    'SECURITY_DEFINITIONS': {
-        'Bearer': {
+   'SECURITY_DEFINITIONS': {
+   #    'Basic': {
+   #          'type': 'basic'
+   #    },
+      'Bearer': {
             'type': 'apiKey',
-            'in': 'header',
-            'name': 'Authorization'
-        }
-    }
+            'name': 'Authorization',
+            'in': 'header'
+      }
+   }
 }
 
 TWILIO_ACCOUNT_SID = config('TWILIO_ACCOUNT_SID')

@@ -9,6 +9,11 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from apps.accounts.models import UserModel
 
 
+
+class VerifySerializer(serializers.Serializer):
+    code = serializers.CharField(max_length=4)
+
+
 class LoginSerializer(TokenObtainPairSerializer):
     username = serializers.CharField(write_only=True)
     password = serializers.CharField(write_only=True)

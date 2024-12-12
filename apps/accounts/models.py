@@ -17,10 +17,17 @@ class UserRole(models.TextChoices):
 
 
 
+class AuthStatus(models.TextChoices):
+    NEW = 'NEW', 'NEW'
+    DONE = 'DONE', 'DONE'
+
+
+
 class UserModel(AbstractUser, BaseModel):
     id = models.UUIDField(unique=True, primary_key=True, editable=False, default=uuid.uuid4)
     phone_number = models.CharField(max_length=20, unique=True)
     user_role = models.CharField(max_length=50, choices=UserRole.choices, default=UserRole.CLIENT)
+    auth_status = models.CharField(max_length=50, choices=AuthStatus.choices, default=AuthStatus.NEW)
 
 
     class Meta:

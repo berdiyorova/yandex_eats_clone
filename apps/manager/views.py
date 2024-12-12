@@ -1,7 +1,7 @@
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 
-from apps.common.permissions import IsManager
+from apps.accounts.permissions import IsManager
 from apps.restaurants.models import BranchModel
 from apps.manager.serializers import BranchSerializer
 
