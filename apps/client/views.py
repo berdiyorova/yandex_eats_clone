@@ -7,11 +7,15 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
 from twilio.base.exceptions import TwilioRestException
 
 from Config.settings import VERIFY_CODE_EXPIRE_TIME
 from apps.accounts.models import UserModel
-from apps.client.serializers import RegisterSerializer, LoginViaPhoneSerializer, VerifySerializer
+from apps.client.models import ClientAddress
+from apps.client.serializers import RegisterSerializer, LoginViaPhoneSerializer, VerifySerializer, \
+    ClientAddressSerializer
+from apps.common.permissions import IsClient
 from apps.common.utils import send_verify_code_to_phone
 
 
@@ -124,3 +128,9 @@ class ResendVerifyView(APIView):
             }
             raise ValidationError(data)
 
+
+
+class ClientAddressViewSet(ModelViewSet):
+    permission_classes = [IsAuthenticated, IsClient]
+    serializer_class = ClientAddressSerializer
+    queryset = ClientAddress.objects.all()
