@@ -1,9 +1,12 @@
+import re
 from decimal import Decimal
 
+from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
-from rest_framework.validators import UniqueTogetherValidator
+from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
 
-from apps.common.utils import get_full_address
+from apps.accounts.models import UserModel, UserRole
+from apps.common.utils import get_full_address, check_password
 from apps.restaurants.models import RestaurantModel, BranchModel
 
 
@@ -31,3 +34,32 @@ class BranchSerializer(serializers.ModelSerializer):
 
         branch = BranchModel.objects.create(**validated_data)
         return branch
+
+
+
+class EmployeeSerializer(serializers.ModelSerializer):
+    confirm_password = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True)
+
+    username = serializers.CharField(validators=[UniqueValidator(
+        queryset=UserModel.objects.all(),
+        message="This username is already registered")
+    ])
+
+    class Meta:
+        model = UserModel
+        fields = ('first_name', 'last_name', 'username', 'user_role', 'auth_status', 'password',
+                  'confirm_password')
+        extra_kwargs = {
+            'first_name': {'required': False},
+            'last_name': {'required': False},
+            'user_role': {'read_only': True},
+            'auth_status': {'read_only': True},
+        }
+
+    def validate(self, attrs):
+        return check_password(attrs)
+
+    def validate_user_role(self, value):
+        if value != UserRole.EMPLOYEE:
+            raise serializers.ValidationError("User role must be only EMPLOYEE.")

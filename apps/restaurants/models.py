@@ -7,6 +7,8 @@ from apps.common.models import AddressModel
 class RestaurantModel(AddressModel):
     name = models.CharField(max_length=255, unique=True)
     manager = models.ForeignKey(UserModel, null=True, on_delete=models.SET_NULL, related_name="restaurants")
+    service_price = models.DecimalField(max_digits=10, decimal_places=0, null=True, blank=True)
+    delivery_price = models.DecimalField(max_digits=10, decimal_places=0, null=True, blank=True)
 
     class Meta:
         verbose_name = 'Restaurant'

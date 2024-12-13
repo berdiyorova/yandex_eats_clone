@@ -1,5 +1,7 @@
 from django.urls import path
 
-urlpatterns = [
+from apps.orders import views
 
+urlpatterns = [
+    path('order_items/', views.CartItemView.as_view()),
 ]

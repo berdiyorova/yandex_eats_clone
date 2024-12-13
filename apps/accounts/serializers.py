@@ -7,7 +7,7 @@ from rest_framework.exceptions import NotFound
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from apps.accounts.models import UserModel
-
+from apps.common.utils import check_phone_number, check_password
 
 
 class VerifySerializer(serializers.Serializer):
@@ -35,12 +35,7 @@ class LoginSerializer(TokenObtainPairSerializer):
 class ChangeUserInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserModel
-        fields = ['first_name', 'last_name', 'username']
-        extra_kwargs = {
-            'first_name': {'required': False},
-            'last_name': {'required': False},
-            'username': {'required': False},
-        }
+        fields = ['first_name', 'last_name', 'username', 'phone_number']
 
     def update(self, instance, validated_data):
 
@@ -63,13 +58,9 @@ class ForgotPasswordSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         phone_number = attrs.get('phone_number', None)
-        pattern = re.compile(
-            r"((?:\+\d{2}[-\.\s]??|\d{4}[-\.\s]??)?(?:\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4}))")
+        phone = check_phone_number(phone_number)
 
-        if not re.match(pattern, phone_number):
-            raise serializers.ValidationError("Invalid mobile number format.")
-
-        user = UserModel.objects.filter(phone_number=phone_number)
+        user = UserModel.objects.filter(phone_number=phone)
         if not user.exists():
             raise NotFound(detail="User not found")
         attrs['user'] = user.first()
@@ -88,21 +79,7 @@ class ResetPasswordSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, attrs):
-        password = attrs.get('password', None)
-        confirm_password = attrs.get('confirm_password', None)
-        if password != confirm_password:
-            raise serializers.ValidationError(
-                {
-                    'success': False,
-                    'message': "Passwords do not match."
-                }
-            )
-        if password:
-            try:
-                validate_password(password=password)
-            except Exception as e:
-                raise serializers.ValidationError(str(e))
-        return attrs
+        return check_password(attrs)
 
     def update(self, instance, validated_data):
         password = validated_data.pop('password')
@@ -113,33 +90,18 @@ class ResetPasswordSerializer(serializers.ModelSerializer):
 
 class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(write_only=True)
-    new_password = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True)
     confirm_password = serializers.CharField(write_only=True)
 
     def validate(self, attrs):
-        new_password = attrs.get('new_password', None)
-        confirm_password = attrs.get('confirm_password', None)
-
-        if new_password != confirm_password:
-            raise serializers.ValidationError(
-                {
-                    'success': False,
-                    'message': "Passwords do not match."
-                }
-            )
-        if new_password:
-            try:
-                validate_password(password=new_password)
-            except Exception as e:
-                raise serializers.ValidationError(str(e))
-        return attrs
+        return check_password(attrs)
 
     def update(self, instance, validated_data):
         old_password = validated_data.pop('old_password')
         if not instance.check_password(old_password):
             raise serializers.ValidationError("Invalid old password")
 
-        new_password = validated_data.pop('new_password')
+        new_password = validated_data.pop('password')
         instance.set_password(new_password)
         return super(ChangePasswordSerializer, self).update(instance, validated_data)
 

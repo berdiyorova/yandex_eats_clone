@@ -4,9 +4,9 @@ from apps.accounts.models import UserModel, UserConfirmModel
 
 @admin.register(UserModel)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ("id", "full_name", "username", "user_role", "phone_number")
+    list_display = ("id", "username", "user_role", "auth_status", "phone_number")
     search_fields = ("id", "first_name", "last_name", "username", "phone_number")
-    list_filter = ("user_role", "created_at")
+    list_filter = ("user_role", "auth_status", "created_at")
 
 
 

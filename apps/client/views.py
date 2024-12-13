@@ -49,3 +49,17 @@ class ClientAddressViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated, IsClient]
     serializer_class = ClientAddressSerializer
     queryset = ClientAddress.objects.all()
+
+    def get_queryset(self):
+        return ClientAddress.objects.filter(client=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        client = self.request.user
+        serializer = self.serializer_class(data=self.request.data)
+        serializer.is_valid(raise_exception=True)
+
+        address = ClientAddress.objects.create(
+            client=client,
+            **serializer.validated_data
+        )
+        return address

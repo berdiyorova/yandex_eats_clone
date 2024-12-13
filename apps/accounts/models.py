@@ -2,7 +2,7 @@ import random
 import uuid
 
 from django.contrib.auth.models import AbstractUser
-from django.db import models
+from django.db import models, IntegrityError
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.common.models import BaseModel
@@ -25,7 +25,7 @@ class AuthStatus(models.TextChoices):
 
 class UserModel(AbstractUser, BaseModel):
     id = models.UUIDField(unique=True, primary_key=True, editable=False, default=uuid.uuid4)
-    phone_number = models.CharField(max_length=20, unique=True)
+    phone_number = models.CharField(max_length=20, null=True, blank=True)
     user_role = models.CharField(max_length=50, choices=UserRole.choices, default=UserRole.CLIENT)
     auth_status = models.CharField(max_length=50, choices=AuthStatus.choices, default=AuthStatus.NEW)
 
@@ -63,7 +63,7 @@ class UserModel(AbstractUser, BaseModel):
 
     def check_username(self):
         if not self.username:
-            temp_username = f"instagram-{uuid.uuid4().__str__().split('-')[-1]}"
+            temp_username = f"yandex-{uuid.uuid4().__str__().split('-')[-1]}"
             while UserModel.objects.filter(username=temp_username):
                 temp_username = f"{temp_username}{random.randint(0, 9)}"
             self.username = temp_username
@@ -75,9 +75,17 @@ class UserModel(AbstractUser, BaseModel):
             self.set_password(temp_password)
 
 
+    def check_phone_number(self):
+        if self.phone_number:
+            if UserModel.objects.filter(phone_number=self.phone_number).exists():
+                self.phone_number = None
+                raise IntegrityError("Phone number is already registered.")
+
+
     def save(self, *args, **kwargs):
         self.check_username()
         self.check_pass()
+        self.check_phone_number()
         super(UserModel, self).save(*args, **kwargs)
 
 

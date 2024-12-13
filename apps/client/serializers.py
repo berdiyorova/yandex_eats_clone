@@ -9,7 +9,8 @@ from apps.client.models import ClientAddress
 class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserModel
-        fields = ('id', 'phone_number',)
+        fields = ('id', 'phone_number', 'user_role', 'auth_status')
+        read_only_fields = ('user_role', 'auth_status')
 
     def validate(self, attrs):
         phone = attrs.get('phone_number')
