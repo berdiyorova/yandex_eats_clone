@@ -6,7 +6,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import NotFound
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from apps.accounts.models import UserModel
+from apps.accounts.models import UserModel, ClientAddress
 from apps.common.utils import check_phone_number, check_password
 
 
@@ -32,24 +32,14 @@ class LoginSerializer(TokenObtainPairSerializer):
         return user.token()
 
 
-class ChangeUserInfoSerializer(serializers.ModelSerializer):
+
+class UserSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = UserModel
-        fields = ['first_name', 'last_name', 'username', 'phone_number']
+        exclude = ['password', 'groups', 'user_permissions', 'is_superuser']
+        read_only_fields = ['is_active', 'date_joined', 'last_login', 'is_staff']
 
-    def update(self, instance, validated_data):
-
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-
-        instance.save()
-        return instance
-
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        representation['success'] = True
-        representation['message'] = 'User updated successfully'
-        return representation
 
 
 
@@ -104,5 +94,50 @@ class ChangePasswordSerializer(serializers.Serializer):
         new_password = validated_data.pop('password')
         instance.set_password(new_password)
         return super(ChangePasswordSerializer, self).update(instance, validated_data)
+
+
+
+class RegisterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserModel
+        fields = ('id', 'phone_number', 'user_role', 'auth_status')
+        read_only_fields = ('user_role', 'auth_status')
+
+    def validate(self, attrs):
+        phone = attrs.get('phone_number')
+        check_phone_number(phone)
+
+        user = UserModel.objects.filter(phone_number=phone).first()
+        if user:
+            raise serializers.ValidationError("Phone number already registered")
+
+        return attrs
+
+
+    def to_representation(self, instance):
+        data = super(RegisterSerializer, self).to_representation(instance)
+        data.update({'user_role': instance.user_role})
+        data.update(instance.token())
+        return data
+
+
+
+class LoginViaPhoneSerializer(serializers.Serializer):
+    phone_number = serializers.CharField(write_only=True)
+
+
+    def validate(self, attrs):
+        phone = attrs.get('phone_number')
+        check_phone_number(phone)
+
+        return attrs
+
+
+
+class ClientAddressSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ClientAddress
+        exclude = ('client',)
 
 

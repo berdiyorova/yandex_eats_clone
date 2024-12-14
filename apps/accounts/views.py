@@ -4,19 +4,28 @@ from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
-from rest_framework.generics import GenericAPIView, UpdateAPIView
+from rest_framework.generics import GenericAPIView, UpdateAPIView, CreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
-from twilio.base.exceptions import TwilioRestException
 
 from Config.settings import VERIFY_CODE_EXPIRE_TIME
-from apps.accounts.models import UserModel, AuthStatus
-from apps.accounts.serializers import LoginSerializer, ChangeUserInfoSerializer, ForgotPasswordSerializer, \
-    ResetPasswordSerializer, ChangePasswordSerializer, VerifySerializer
+from apps.accounts.models import UserModel, AuthStatus, ClientAddress
+from apps.accounts.permissions import IsClient
+from apps.accounts.serializers import LoginSerializer, ForgotPasswordSerializer, \
+    ResetPasswordSerializer, ChangePasswordSerializer, VerifySerializer, LoginViaPhoneSerializer, \
+    ClientAddressSerializer, RegisterSerializer, UserSerializer
 from apps.common.utils import send_verify_code_to_phone
 
+
+
+
+class RegisterView(CreateAPIView):
+    serializer_class = RegisterSerializer
+    queryset = UserModel.objects.all()
+    permission_classes = [AllowAny,]
 
 
 class VerifyView(GenericAPIView):
@@ -118,10 +127,10 @@ class LogoutView(APIView):
         }, status=status.HTTP_205_RESET_CONTENT)
 
 
-class ChangeUserInformationView(UpdateAPIView):
-    permission_classes = [IsAuthenticated, ]
-    serializer_class = ChangeUserInfoSerializer
-    http_method_names = ['patch', 'put']
+class ProfileView(RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserSerializer
+    queryset = UserModel.objects.all()
 
     def get_object(self):
         return self.request.user
@@ -180,3 +189,47 @@ class ChangePasswordView(UpdateAPIView):
 
     def get_object(self):
         return self.request.user
+
+
+class LoginViaPhoneView(GenericAPIView):
+    permission_classes = [IsClient,]
+    queryset = UserModel.objects.all()
+    serializer_class = LoginViaPhoneSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=self.request.data)
+        serializer.is_valid(raise_exception=True)
+
+        phone = serializer.validated_data.get('phone_number')
+        try:
+            user = UserModel.objects.filter(phone_number=phone).first()
+        except UserModel.DoesNotExists:
+            raise ValidationError("You have not registered")
+
+        code = user.create_verify_code()
+        send_verify_code_to_phone(user.phone_number, code)
+        response = user.token()
+        response['success'] = True
+        response['message'] = 'We have sent you a verification code.'
+
+        return Response(data=response, status=status.HTTP_200_OK)
+
+
+
+class ClientAddressViewSet(ModelViewSet):
+    permission_classes = [IsClient, IsAuthenticated]
+    serializer_class = ClientAddressSerializer
+    queryset = ClientAddress.objects.all()
+
+    def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return self.queryset.none()
+        return ClientAddress.objects.filter(client=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        client = self.request.user
+        serializer = self.serializer_class(data=self.request.data)
+        serializer.is_valid(raise_exception=True)
+
+        serializer.save(client=client)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)

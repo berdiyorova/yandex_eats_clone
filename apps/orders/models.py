@@ -27,3 +27,7 @@ class OrderModel(BaseModel):
 
     client = models.ForeignKey(UserModel, on_delete=models.SET_NULL, related_name='orders', null=True)
     branch = models.ForeignKey(BranchModel, on_delete=models.SET_NULL, related_name='orders', null=True)
+
+    class Meta:
+        verbose_name = 'Order'
+        verbose_name_plural = 'Orders'

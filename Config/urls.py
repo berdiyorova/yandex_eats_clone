@@ -4,7 +4,6 @@ from django.urls import path, include
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
-from rest_framework_simplejwt.views import TokenRefreshView
 
 from Config import settings
 
@@ -27,12 +26,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
     path('accounts/', include('apps.accounts.urls')),
-    path('admins/', include('apps.admins.urls')),
-    path('manager/', include('apps.manager.urls')),
-    path('employee/', include('apps.employee.urls')),
-    path('delivery/', include('apps.delivery.urls')),
-    path('client/', include('apps.client.urls')),
-
+    path('restaurants/', include('apps.restaurants.urls')),
+    path('products/', include('apps.products.urls')),
     path('orders/', include('apps.orders.urls')),
 
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),

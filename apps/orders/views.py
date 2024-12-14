@@ -19,12 +19,17 @@ class CartItemView(GenericAPIView):
         """
         Add or update a product in the cart.
         """
-        serializer = ProductSerializer(data=request.data)
+        serializer = ProductSerializer(data=self.request.data)
         serializer.is_valid(raise_exception=True)
         product_data = serializer.validated_data
 
         order_items = request.session.get('order_items', {})
-        order_items[product_data['image']] = product_data
+        order_items[product_data['image']] = product_data['image']
+        order_items[product_data['name']] = product_data['name']
+        order_items[product_data['real_price']] = product_data['real_price']
+        order_items[product_data['measure']] = product_data['measure']
+        order_items[product_data['measure_unit']] = product_data['measure_unit']
+        order_items[product_data['quantity']] = product_data['quantity']
         request.session['order_items'] = order_items
 
         return Response(order_items, status=status.HTTP_201_CREATED)

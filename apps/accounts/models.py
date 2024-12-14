@@ -5,13 +5,13 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models, IntegrityError
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from apps.common.models import BaseModel
+from apps.common.models import BaseModel, AddressModel
 
 
 class UserRole(models.TextChoices):
     ADMIN = 'ADMIN', 'ADMIN'
-    MANAGER = 'MANAGER', 'MANAGER'
-    EMPLOYEE = 'EMPLOYEE', 'EMPLOYEE'
+    OWNER = 'MANAGER', 'MANAGER'
+    MANAGER = 'EMPLOYEE', 'EMPLOYEE'
     DELIVERY = 'DELIVERY', 'DELIVERY'
     CLIENT = 'CLIENT', 'CLIENT'
 
@@ -103,4 +103,21 @@ class UserConfirmModel(BaseModel):
         verbose_name = 'Verification code'
         verbose_name_plural = 'Verification codes'
         unique_together = ('user', 'code')
+
+
+
+class ClientAddress(AddressModel):
+    name = models.CharField(max_length=255, null=True, blank=True)
+    home_number = models.CharField(max_length=10, null=True, blank=True)
+    door_phone = models.CharField(max_length=20, null=True, blank=True)
+    entrance = models.PositiveSmallIntegerField(null=True, blank=True)
+    floor = models.PositiveSmallIntegerField(null=True, blank=True)
+    instructions = models.TextField(null=True, blank=True)
+
+    client = models.ForeignKey(UserModel, on_delete=models.CASCADE, related_name="addresses")
+
+    class Meta:
+        verbose_name = 'Client Address'
+        verbose_name_plural = 'Client Addresses'
+        unique_together = ('address', 'client')
 

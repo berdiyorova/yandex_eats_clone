@@ -32,11 +32,6 @@ INSTALLED_APPS = [
     'drf_yasg',
 
     'apps.accounts',
-    'apps.admins',
-    'apps.manager',
-    'apps.employee',
-    'apps.delivery',
-    'apps.client',
     'apps.restaurants',
     'apps.products',
     'apps.orders',
