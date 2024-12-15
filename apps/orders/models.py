@@ -14,7 +14,7 @@ class PaymentMethod(models.TextChoices):
 class OrderStatus(models.TextChoices):
     PENDING = 'PENDING', 'PENDING'
     ACCEPTED = 'ACCEPTED', 'ACCEPTED'
-    IN_PROGRESS = 'IN_PROGRESS', 'IN_PROGRESS'
+    IN_TRANSIT = 'IN_TRANSIT', 'IN_TRANSIT'
     DELIVERED = 'DELIVERED', 'DELIVERED'
     CANCELLED = 'CANCELLED', 'CANCELLED'
 
@@ -25,6 +25,8 @@ class OrderModel(BaseModel):
     status = models.CharField(choices=OrderStatus.choices, default=OrderStatus.PENDING)
 
     client = models.ForeignKey(UserModel, on_delete=models.SET_NULL, related_name='orders', null=True)
+    courier = models.ForeignKey(UserModel, on_delete=models.SET_NULL, related_name='deliveries', null=True)
+    branch = models.ForeignKey(BranchModel, on_delete=models.SET_NULL, related_name='orders', null=True)
 
     class Meta:
         verbose_name = 'Order'
@@ -37,6 +39,7 @@ class OrderItemModel(BaseModel):
     product_measure = models.PositiveSmallIntegerField(null=True, blank=True)
     measure_unit = models.CharField(max_length=10)
     product_price = models.DecimalField(max_digits=10, decimal_places=0)
+    quantity = models.PositiveSmallIntegerField()
 
     order = models.ForeignKey(OrderModel, on_delete=models.CASCADE, related_name='order_items')
 

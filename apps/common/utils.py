@@ -7,8 +7,9 @@ from geopy.geocoders import Nominatim
 from twilio.rest import Client
 from rest_framework.serializers import ValidationError
 
-from apps.accounts.models import AuthStatus, UserModel
-from apps.common.constants import BRANCH_SEARCH_RADIUS
+from apps.accounts.models import AuthStatus, UserModel, CourierAddress
+from apps.common.constants import BRANCH_SEARCH_RADIUS, DELIVERY_PRICE
+from apps.products.models import ProductModel
 from apps.restaurants.models import BranchModel
 
 
@@ -20,8 +21,8 @@ def get_full_address(longitude, latitude):
         geolocator = Nominatim(user_agent="yandex_eats")
         location = geolocator.reverse(f"{longitude}, {latitude}")
         return location.address
-    except Exception:
-        raise Exception("Sorry, something went wrong.")
+    except Exception as e:
+        print(str(e))
 
 
 def send_verify_code_to_phone(phone, code):
@@ -111,3 +112,46 @@ def get_near_branches(latitude, longitude):
         return list(near_branches.values())
     else:
         return []
+
+
+
+def calculate_order_total_price(cart):
+    """
+    Calculate order total amount on the cart
+    :param cart:
+    :return:
+    """
+    total_price = 0
+    product = None
+
+    for item in cart:
+        product_id = item['product_id']
+
+        product = ProductModel.objects.filter(id=product_id).first()
+        total_price += item['quantity'] * product.real_price
+
+    total_price += product.branch.restaurant.service_price + DELIVERY_PRICE
+
+    return total_price
+
+
+
+def get_nearest_courier(latitude, longitude):
+    if latitude and longitude:
+        user_location = (float(latitude), float(longitude))
+        nearest_courier = None
+        min_distance = float('inf')
+        location = None
+
+        for courier in CourierAddress.objects.all():
+            courier_location = (courier.latitude, courier.longitude)
+            distance = geodesic(user_location, courier_location).kilometers
+
+            if distance <= BRANCH_SEARCH_RADIUS and distance < min_distance:
+                min_distance = distance
+                nearest_courier = courier.courier
+                location = courier_location
+
+        return nearest_courier, location
+    else:
+        return None

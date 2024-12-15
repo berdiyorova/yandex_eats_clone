@@ -11,11 +11,11 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from apps.accounts.models import UserModel, AuthStatus, ClientAddress
-from apps.accounts.permissions import IsClient
+from apps.accounts.models import UserModel, AuthStatus, ClientAddress, CourierAddress
+from apps.accounts.permissions import IsClient, IsCourier
 from apps.accounts.serializers import LoginSerializer, ForgotPasswordSerializer, \
     ResetPasswordSerializer, ChangePasswordSerializer, VerifySerializer, LoginViaPhoneSerializer, \
-    ClientAddressSerializer, RegisterSerializer, UserSerializer
+    ClientAddressSerializer, RegisterSerializer, UserSerializer, CourierAddressSerializer
 from apps.common.constants import VERIFY_CODE_EXPIRE_TIME
 from apps.common.utils import send_verify_code_to_phone
 
@@ -145,7 +145,6 @@ class ProfileView(RetrieveUpdateDestroyAPIView):
     """
     permission_classes = [IsAuthenticated]
     serializer_class = UserSerializer
-    queryset = UserModel.objects.all()
 
     def get_object(self):
         return self.request.user
@@ -219,7 +218,7 @@ class LoginViaPhoneView(GenericAPIView):
     """
     For client users, log in with phone number
     """
-    permission_classes = [IsClient,]
+    permission_classes = [AllowAny,]
     queryset = UserModel.objects.all()
     serializer_class = LoginViaPhoneSerializer
 
@@ -228,13 +227,13 @@ class LoginViaPhoneView(GenericAPIView):
         serializer.is_valid(raise_exception=True)
 
         phone = serializer.validated_data.get('phone_number')
-        try:
-            user = UserModel.objects.filter(phone_number=phone).first()
-        except UserModel.DoesNotExists:
+        user = UserModel.objects.filter(phone_number=phone)
+        if not user.exists():
             raise ValidationError("You have not registered")
 
-        code = user.create_verify_code()
-        send_verify_code_to_phone(user.phone_number, code)
+        user = user.first()
+        # code = user.create_verify_code()
+        # send_verify_code_to_phone(user.phone_number, code)
         response = user.token()
         response['success'] = True
         response['message'] = 'We have sent you a verification code.'
@@ -258,8 +257,32 @@ class ClientAddressViewSet(ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         client = self.request.user
-        serializer = self.serializer_class(data=self.request.data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        serializer.validated_data['client'] = client
+        self.perform_create(serializer)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        serializer.save(client=client)
+
+
+
+class CourierAddressViewSet(ModelViewSet):
+    """
+    CRUD for client addresses
+    """
+    permission_classes = [IsCourier, IsAuthenticated]
+    serializer_class = CourierAddressSerializer
+    queryset = CourierAddress.objects.all()
+
+    def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return self.queryset.none()
+        return CourierAddress.objects.filter(courier=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        courier = self.request.user
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.validated_data['courier'] = courier
+        self.perform_create(serializer)
         return Response(serializer.data, status=status.HTTP_201_CREATED)

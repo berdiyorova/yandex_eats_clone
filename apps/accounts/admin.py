@@ -1,5 +1,5 @@
 from django.contrib import admin
-from apps.accounts.models import UserModel, UserConfirmModel, ClientAddress
+from apps.accounts.models import UserModel, UserConfirmModel, ClientAddress, CourierAddress
 
 
 @admin.register(UserModel)
@@ -23,3 +23,10 @@ class ClientAddressAdmin(admin.ModelAdmin):
     list_display = ("address", "name", "client")
     search_fields = ("address", "name", "client")
     list_filter = ("created_at", "name", "client")
+
+
+@admin.register(CourierAddress)
+class CourierAddressAdmin(admin.ModelAdmin):
+    list_display = ("address", "courier")
+    search_fields = ("address", "courier")
+    list_filter = ("created_at", "courier")

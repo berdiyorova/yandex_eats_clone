@@ -28,6 +28,11 @@ class IngredientModel(BaseModel):
     def __str__(self):
         return self.name
 
+    class Meta:
+        verbose_name = "Ingredient"
+        verbose_name_plural = "Ingredients"
+
+
 
 
 class ProductModel(BaseModel):
@@ -41,7 +46,7 @@ class ProductModel(BaseModel):
     real_price = models.DecimalField(max_digits=10, decimal_places=0)
 
     category = models.ManyToManyField(CategoryModel, related_name='products')
-    branch = models.ManyToManyField(BranchModel, related_name='products')
+    branch = models.ForeignKey(BranchModel, on_delete=models.CASCADE, related_name='products')
     ingredients = models.ManyToManyField(IngredientModel, related_name='products')
 
     def __str__(self):

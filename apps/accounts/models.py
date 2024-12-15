@@ -75,17 +75,9 @@ class UserModel(AbstractUser, BaseModel):
             self.set_password(temp_password)
 
 
-    def check_phone_number(self):
-        if self.phone_number:
-            if UserModel.objects.filter(phone_number=self.phone_number).exists():
-                self.phone_number = None
-                raise IntegrityError("Phone number is already registered.")
-
-
     def save(self, *args, **kwargs):
         self.check_username()
         self.check_pass()
-        self.check_phone_number()
         super(UserModel, self).save(*args, **kwargs)
 
 
@@ -121,3 +113,12 @@ class ClientAddress(AddressModel):
         verbose_name_plural = 'Client Addresses'
         unique_together = ('address', 'client')
 
+
+
+class CourierAddress(AddressModel):
+    courier = models.ForeignKey(UserModel, on_delete=models.CASCADE, related_name="locations")
+
+    class Meta:
+        verbose_name = 'Courier Address'
+        verbose_name_plural = 'Courier Addresses'
+        unique_together = ('address', 'courier')

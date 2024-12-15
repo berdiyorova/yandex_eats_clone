@@ -66,8 +66,8 @@ class BranchSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = BranchModel
-        fields = ('id', 'restaurant', 'address', 'longitude', 'latitude')
-        read_only_fields = ('address',)
+        fields = ('id', 'restaurant', 'name', 'address', 'longitude', 'latitude')
+        read_only_fields = ('address', 'name')
         validators = [
             UniqueTogetherValidator(
                 queryset=BranchModel.objects.all(),
@@ -82,7 +82,7 @@ class BranchSerializer(serializers.ModelSerializer):
         latitude = validated_data.get('latitude')
 
         validated_data['address'] = get_full_address(longitude=Decimal(longitude), latitude=Decimal(latitude))
-        restaurant = RestaurantModel.objects.filter(id=int(validated_data['restaurant']))
+        restaurant = validated_data['restaurant']
         validated_data['name'] = restaurant.name
 
         branch = BranchModel.objects.create(**validated_data)

@@ -1,13 +1,12 @@
-import re
+from decimal import Decimal
 
 from django.contrib.auth import authenticate
-from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from apps.accounts.models import UserModel, ClientAddress
-from apps.common.utils import check_phone_number, check_password
+from apps.accounts.models import UserModel, ClientAddress, CourierAddress
+from apps.common.utils import check_phone_number, check_password, get_full_address
 
 
 class VerifySerializer(serializers.Serializer):
@@ -107,8 +106,8 @@ class RegisterSerializer(serializers.ModelSerializer):
         phone = attrs.get('phone_number')
         check_phone_number(phone)
 
-        user = UserModel.objects.filter(phone_number=phone).first()
-        if user:
+        user = UserModel.objects.filter(phone_number=phone)
+        if user.exists():
             raise serializers.ValidationError("Phone number already registered")
 
         return attrs
@@ -139,5 +138,30 @@ class ClientAddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClientAddress
         exclude = ('client',)
+        read_only_fields = ('address',)
+
+    def create(self, validated_data):
+        longitude = validated_data.get('longitude')
+        latitude = validated_data.get('latitude')
+
+        validated_data['address'] = get_full_address(longitude=Decimal(longitude), latitude=Decimal(latitude))
+
+        client_address = ClientAddress.objects.create(**validated_data)
+        return client_address
 
 
+class CourierAddressSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = CourierAddress
+        exclude = ('courier',)
+        read_only_fields = ('address',)
+
+    def create(self, validated_data):
+        longitude = validated_data.get('longitude')
+        latitude = validated_data.get('latitude')
+
+        validated_data['address'] = get_full_address(longitude=Decimal(longitude), latitude=Decimal(latitude))
+
+        courier_address = CourierAddress.objects.create(**validated_data)
+        return courier_address
