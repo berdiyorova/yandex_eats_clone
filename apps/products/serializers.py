@@ -11,6 +11,7 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductModel
         fields = '__all__'
+        read_only_fields = ('real_price',)
 
     def get_restaurant(self, obj):
         return obj.branch.first().restaurant.name

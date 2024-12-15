@@ -25,6 +25,9 @@ class CategoryModel(BaseModel):
 class IngredientModel(BaseModel):
     name = models.CharField(max_length=100, unique=True)
 
+    def __str__(self):
+        return self.name
+
 
 
 class ProductModel(BaseModel):
@@ -49,4 +52,4 @@ class ProductModel(BaseModel):
         verbose_name_plural = "Products"
 
     def is_discount(self):
-        return True if self.discount != 0 else False
+        return self.discount != 0

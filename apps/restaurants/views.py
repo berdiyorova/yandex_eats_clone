@@ -8,8 +8,7 @@ from apps.accounts.permissions import IsOwner
 from apps.common.custom_pagination import CustomPagination
 from apps.common.utils import create_user
 from apps.restaurants.models import BranchModel, RestaurantModel
-from apps.restaurants.serializers import BranchSerializer, ManagerSerializer, RestaurantSerializer, \
-    OwnerDeliverySerializer
+from apps.restaurants.serializers import BranchSerializer, RestaurantSerializer, OwnerManageCourierSerializer
 
 
 class RestaurantViewSet(ModelViewSet):
@@ -20,7 +19,7 @@ class RestaurantViewSet(ModelViewSet):
 
 
 class OwnerViewSet(ModelViewSet):
-    serializer_class = OwnerDeliverySerializer
+    serializer_class = OwnerManageCourierSerializer
     queryset = UserModel.objects.all()
     permission_classes = [IsAdminUser, IsAuthenticated]
     http_method_names = ['post', 'get', 'delete']
@@ -38,21 +37,21 @@ class OwnerViewSet(ModelViewSet):
 
 
 
-class DeliveryViewSet(ModelViewSet):
-    serializer_class = OwnerDeliverySerializer
+class CourierViewSet(ModelViewSet):
+    serializer_class = OwnerManageCourierSerializer
     queryset = UserModel.objects.all()
     permission_classes = [IsAdminUser, IsAuthenticated]
     http_method_names = ['post', 'get', 'delete']
     pagination_class = CustomPagination
 
     def get_queryset(self):
-        return UserModel.objects.filter(user_role=UserRole.DELIVERY)
+        return UserModel.objects.filter(user_role=UserRole.COURIER)
 
     def create(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=self.request.data)
         serializer.is_valid(raise_exception=True)
 
-        validated_data = create_user(serializer, UserRole.DELIVERY)
+        validated_data = create_user(serializer, UserRole.COURIER)
         return Response(data=validated_data, status=status.HTTP_201_CREATED)
 
 
@@ -63,8 +62,8 @@ class BranchViewSet(ModelViewSet):
     pagination_class = CustomPagination
 
 
-class EmployeeViewSet(ModelViewSet):
-    serializer_class = ManagerSerializer
+class ManagerViewSet(ModelViewSet):
+    serializer_class = OwnerManageCourierSerializer
     permission_classes = [IsOwner, IsAuthenticated]
     queryset = UserModel.objects.all()
     http_method_names = ['get', 'post', 'delete']

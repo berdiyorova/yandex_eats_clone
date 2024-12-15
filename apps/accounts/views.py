@@ -11,24 +11,30 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from Config.settings import VERIFY_CODE_EXPIRE_TIME
 from apps.accounts.models import UserModel, AuthStatus, ClientAddress
 from apps.accounts.permissions import IsClient
 from apps.accounts.serializers import LoginSerializer, ForgotPasswordSerializer, \
     ResetPasswordSerializer, ChangePasswordSerializer, VerifySerializer, LoginViaPhoneSerializer, \
     ClientAddressSerializer, RegisterSerializer, UserSerializer
+from apps.common.constants import VERIFY_CODE_EXPIRE_TIME
 from apps.common.utils import send_verify_code_to_phone
 
 
 
 
 class RegisterView(CreateAPIView):
+    """
+    Register view for client users
+   """
     serializer_class = RegisterSerializer
     queryset = UserModel.objects.all()
     permission_classes = [AllowAny,]
 
 
 class VerifyView(GenericAPIView):
+    """
+   Verify the phone number using the verification code
+   """
     permission_classes = [IsAuthenticated,]
     queryset = UserModel.objects.all()
     serializer_class = VerifySerializer
@@ -73,6 +79,9 @@ class VerifyView(GenericAPIView):
 
 
 class ResendVerifyView(APIView):
+    """
+   A verification code will be sent again
+   """
     permission_classes = [IsAuthenticated, ]
     queryset = UserModel.objects.all()
 
@@ -105,6 +114,9 @@ class ResendVerifyView(APIView):
 
 
 class LoginView(TokenObtainPairView):
+    """
+    Log in with basic authentication
+    """
     serializer_class = LoginSerializer
 
 
@@ -128,6 +140,9 @@ class LogoutView(APIView):
 
 
 class ProfileView(RetrieveUpdateDestroyAPIView):
+    """
+    Get user profile info and edit it
+    """
     permission_classes = [IsAuthenticated]
     serializer_class = UserSerializer
     queryset = UserModel.objects.all()
@@ -137,6 +152,9 @@ class ProfileView(RetrieveUpdateDestroyAPIView):
 
 
 class ForgotPasswordView(GenericAPIView):
+    """
+    User identification by phone number when the password is forgotten
+    """
     permission_classes = [AllowAny, ]
     serializer_class = ForgotPasswordSerializer
 
@@ -160,6 +178,9 @@ class ForgotPasswordView(GenericAPIView):
 
 
 class ResetPasswordView(UpdateAPIView):
+    """
+    Reset a forgotten password
+    """
     serializer_class = ResetPasswordSerializer
     permission_classes = [IsAuthenticated, ]
     http_method_names = ['patch', 'put']
@@ -182,6 +203,9 @@ class ResetPasswordView(UpdateAPIView):
 
 
 class ChangePasswordView(UpdateAPIView):
+    """
+    Change old password to new password
+    """
     permission_classes = [IsAuthenticated,]
     serializer_class = ChangePasswordSerializer
     queryset = UserModel.objects.all()
@@ -192,6 +216,9 @@ class ChangePasswordView(UpdateAPIView):
 
 
 class LoginViaPhoneView(GenericAPIView):
+    """
+    For client users, log in with phone number
+    """
     permission_classes = [IsClient,]
     queryset = UserModel.objects.all()
     serializer_class = LoginViaPhoneSerializer
@@ -217,6 +244,9 @@ class LoginViaPhoneView(GenericAPIView):
 
 
 class ClientAddressViewSet(ModelViewSet):
+    """
+    CRUD for client addresses
+    """
     permission_classes = [IsClient, IsAuthenticated]
     serializer_class = ClientAddressSerializer
     queryset = ClientAddress.objects.all()

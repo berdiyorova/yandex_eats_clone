@@ -13,6 +13,7 @@ class PaymentMethod(models.TextChoices):
 
 class OrderStatus(models.TextChoices):
     PENDING = 'PENDING', 'PENDING'
+    ACCEPTED = 'ACCEPTED', 'ACCEPTED'
     IN_PROGRESS = 'IN_PROGRESS', 'IN_PROGRESS'
     DELIVERED = 'DELIVERED', 'DELIVERED'
     CANCELLED = 'CANCELLED', 'CANCELLED'
@@ -20,14 +21,25 @@ class OrderStatus(models.TextChoices):
 
 class OrderModel(BaseModel):
     total_amount = models.DecimalField(max_digits=10, decimal_places=0)
-    delivery_address = models.CharField(max_length=255)
-    delivery_time = models.DateTimeField(null=True, blank=True)
     payment_method = models.CharField(choices=PaymentMethod.choices, default=PaymentMethod.CASH)
     status = models.CharField(choices=OrderStatus.choices, default=OrderStatus.PENDING)
 
     client = models.ForeignKey(UserModel, on_delete=models.SET_NULL, related_name='orders', null=True)
-    branch = models.ForeignKey(BranchModel, on_delete=models.SET_NULL, related_name='orders', null=True)
 
     class Meta:
         verbose_name = 'Order'
         verbose_name_plural = 'Orders'
+
+
+class OrderItemModel(BaseModel):
+    product_name = models.CharField(max_length=100)
+    product_image = models.ImageField(upload_to='orders/', null=True, blank=True)
+    product_measure = models.PositiveSmallIntegerField(null=True, blank=True)
+    measure_unit = models.CharField(max_length=10)
+    product_price = models.DecimalField(max_digits=10, decimal_places=0)
+
+    order = models.ForeignKey(OrderModel, on_delete=models.CASCADE, related_name='order_items')
+
+    class Meta:
+        verbose_name = 'Order Item'
+        verbose_name_plural = 'Order Items'

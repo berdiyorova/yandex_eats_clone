@@ -1,50 +1,123 @@
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
-from rest_framework.generics import GenericAPIView
+from rest_framework.generics import ListCreateAPIView, GenericAPIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from apps.orders.serializers import OrderItemSerializer, ProductSerializer
+from apps.accounts.permissions import IsClient
+from apps.orders.serializers import CartItemSerializer
 
 
-class CartItemView(GenericAPIView):
+class UserCartView(ListCreateAPIView):
+    serializer_class = CartItemSerializer
+    permission_classes = []
+
+    @swagger_auto_schema(
+        operation_description="Retrieve the cart",
+        responses={200: CartItemSerializer(many=True)}
+    )
     def get(self, request):
         """
-        Retrieve the cart items from the session.
+        Retrieve the cart from the session.
         """
-        order_items = request.session.get('order_items', {})
-        serializer = OrderItemSerializer(data=order_items)
-        serializer.is_valid(raise_exception=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        cart = request.session.get('cart', [])
+        return Response(
+            cart,
+            status=status.HTTP_200_OK
+        )
 
+
+    @swagger_auto_schema(
+        operation_description="Remove a product from the cart.",
+        responses={
+            204: 'Product removed successfully.',
+            404: "Product not found in the cart"
+        }
+    )
     def post(self, request):
         """
         Add or update a product in the cart.
         """
-        serializer = ProductSerializer(data=self.request.data)
+        serializer = CartItemSerializer(data=self.request.data)
         serializer.is_valid(raise_exception=True)
-        product_data = serializer.validated_data
+        cart_item = serializer.validated_data
+        cart = request.session.get('cart', [])
 
-        order_items = request.session.get('order_items', {})
-        order_items[product_data['image']] = product_data['image']
-        order_items[product_data['name']] = product_data['name']
-        order_items[product_data['real_price']] = product_data['real_price']
-        order_items[product_data['measure']] = product_data['measure']
-        order_items[product_data['measure_unit']] = product_data['measure_unit']
-        order_items[product_data['quantity']] = product_data['quantity']
-        request.session['order_items'] = order_items
+        if isinstance(cart, str):
+            import json
+            cart = json.loads(cart)  # Deserialize JSON string into a Python list
 
-        return Response(order_items, status=status.HTTP_201_CREATED)
+        if not isinstance(cart, list):
+            cart = []
 
+        t = True
+        for item in cart:
+            if item['product_id'] == cart_item['product_id']:
+                item['quantity'] += cart_item['quantity']
+                t = False
+                break
+        if t:
+            cart.append(cart_item)
+
+        request.session['cart'] = cart
+
+        return Response(
+            cart,
+            status=status.HTTP_201_CREATED
+        )
+
+
+
+class UserCartItemView(GenericAPIView):
+    permission_classes = []
+    lookup_url_kwarg = 'product_id'
+
+    def get(self, request, product_id):
+        """
+        get cart item by product id
+        :param request:
+        :param product_id:
+        :return:
+        """
+        cart = request.session.get('cart', [])
+        for cart_item in cart:
+            if product_id == cart_item['product_id']:
+                return Response(
+                    data=cart_item,
+                    status=status.HTTP_200_OK
+                )
+
+        return Response(
+            data={'success': False, 'message': 'Product not found in the cart'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    @swagger_auto_schema(
+        operation_description="Remove a product from the cart.",
+        responses={
+            204: 'Product removed successfully.',
+            404: "Product not found in the cart"
+        }
+    )
     def delete(self, request, product_id):
         """
         Remove a product from the cart.
         """
-        order_items = request.session.get('order_items', {})
-        if product_id in order_items:
-            del order_items[product_id]
-            request.session['order_items'] = order_items
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        else:
-            return Response(
-                {'error': 'Product not found in the cart'},
-                status=status.HTTP_404_NOT_FOUND
-            )
+        cart = request.session.get('cart', [])
+        for cart_item in cart:
+            if product_id == cart_item['product_id']:
+                cart.remove(cart_item)
+                request.session['cart'] = cart
+                return Response(
+                    data=cart,
+                    status=status.HTTP_204_NO_CONTENT
+                )
+
+        return Response(
+            data={'success': False, 'message': 'Product not found in the cart'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+
+
+

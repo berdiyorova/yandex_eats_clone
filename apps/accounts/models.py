@@ -10,9 +10,9 @@ from apps.common.models import BaseModel, AddressModel
 
 class UserRole(models.TextChoices):
     ADMIN = 'ADMIN', 'ADMIN'
-    OWNER = 'MANAGER', 'MANAGER'
-    MANAGER = 'EMPLOYEE', 'EMPLOYEE'
-    DELIVERY = 'DELIVERY', 'DELIVERY'
+    OWNER = 'OWNER', 'OWNER'
+    MANAGER = 'MANAGER', 'MANAGER'
+    COURIER = 'COURIER', 'COURIER'
     CLIENT = 'CLIENT', 'CLIENT'
 
 

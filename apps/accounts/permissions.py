@@ -20,10 +20,10 @@ class IsManager(permissions.BasePermission):
         )
 
 
-class IsDelivery(permissions.BasePermission):
+class IsCourier(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         return (
-                request.user.user_role == UserRole.DELIVERY and
+                request.user.user_role == UserRole.COURIER and
                 request.user.auth_status == AuthStatus.DONE
         )
 
