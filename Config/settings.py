@@ -74,7 +74,7 @@ WSGI_APPLICATION = 'Config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': config("DB_NAME"),
+        'NAME': config("DB_NAME", default="yandex_eats"),
         'HOST': config("DB_HOST"),
         'PORT': config("DB_PORT"),
         'USER': config("DB_USER"),
